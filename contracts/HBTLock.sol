@@ -107,7 +107,8 @@ contract HBTLock is Ownable {
         require(unlockNumber > 0 , "HBTLock: unlock number Less than zero");
 
 
-        hbtSafe.safeTransferFrom(address(this),_address,unlockNumber);
+        hbtSafe.safeTransfer(_address,unlockNumber);
+        // hbtSafe.safeTransferFrom(address(this),_address,unlockNumber);
 
         pickDepositTotal = pickDepositTotal.add(unlockDispositNumber);
         pickTimesAwardTotal = pickTimesAwardTotal.add(unlockNumber.sub(unlockDispositNumber));
