@@ -135,6 +135,7 @@ contract PlayerBook is Governance, IPlayerBook {
 
     /**
      * check name string
+     * 查询某个名字是否可以注册
      */
     function checkIfNameValid(string memory nameStr)
         public
@@ -205,6 +206,11 @@ contract PlayerBook is Governance, IPlayerBook {
      * (this might cost a lot of gas)
      */
 
+    /**
+    参数类型：(string memory nameString, string memory affCode) //自己的名字，邀请人的名字
+说明：如果邀请人的名字为“”意味着没有邀请者
+	每一次注册是需要支付手续费的，【0，99）号用户收取100 finney，【100，199）200 ～
+     */
     function registerNameXName(string memory nameString, string memory affCode)
         public
         payable 
@@ -341,7 +347,7 @@ contract PlayerBook is Governance, IPlayerBook {
         return (_plyr[pID].laff > 0);
     }
 
-    
+    //查询某个用户的名字
     function getPlayerName(address from)
         external
         view
@@ -354,6 +360,7 @@ contract PlayerBook is Governance, IPlayerBook {
         return (_plyr[pID].name);
     }
 
+    //查询某个用户的邀请者地址
     function getPlayerLaffAddress(address from) external view returns(address laffAddress) {
         uint256 pID =  _pIDxAddr[from];
         if(_pID==0){
@@ -366,6 +373,7 @@ contract PlayerBook is Governance, IPlayerBook {
         return _plyr[laffID].addr;
     }
 
+    //查询某个用户的邀请者的地址
     function getPlayerLaffName(address from)
         external
         view
@@ -384,6 +392,7 @@ contract PlayerBook is Governance, IPlayerBook {
         return (_plyr[aID].name);
     }
 
+    //查询某个用户的id，邀请者id，邀请数量
     function getPlayerInfo(address from)
         external
         view
@@ -396,6 +405,7 @@ contract PlayerBook is Governance, IPlayerBook {
         return (pID,_plyr[pID].laff,_plyr[pID].lvCount);
     }
 
+    //获取当前注册费用
     function getRegistrationFee()
         external
         view
