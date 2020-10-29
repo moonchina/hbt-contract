@@ -316,18 +316,18 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
+    
         
-        uint256 _pendingTimes = pending.mul(_times).div(10);
-        hbt.allowMint(address(this), _pendingTimes.sub(pending));
-
-        /**
-        uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
         address refer = playerBook.getPlayerLaffAddress(msg.sender);
         uint256 referRewardRate = playerBook._referRewardRate();
         uint256 baseRate = playerBook._baseRate();
         uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
-        safeHbtTransfer(msg.sender, pending.sub(toRefer));
-        safeHbtTransfer(refer, toRefer); */
+        // safeHbtTransfer(msg.sender, pending.sub(toRefer));
+        safeHbtTransfer(refer, toRefer); 
+
+        uint256 _pt = pending.sub(toRefer);
+        uint256 _pendingTimes = _pt.mul(_times).div(10);
+        hbt.allowMint(address(this), _pendingTimes.sub(_pt));
 
         safeHbtTransfer(address(hbtLock), _pendingTimes);
         hbtLock.disposit(msg.sender,pending,_times);
