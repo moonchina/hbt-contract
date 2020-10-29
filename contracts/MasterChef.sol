@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interface/IPlayerBook.sol";
 import "./HBTToken.sol";
 import "./HBTLock.sol";
 
@@ -83,6 +84,7 @@ contract MasterChef is Ownable {
     // The block number when HBT mining starts.
     uint256 public startBlock;
 
+    IPlayerBook public playerBook;
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -101,6 +103,8 @@ contract MasterChef is Ownable {
         hbtPerBlock = _hbtPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
+
+        playerBook = IPlayerBook(_playerBook);
     }
 
     function poolLength() external view returns (uint256) {
@@ -253,7 +257,7 @@ contract MasterChef is Ownable {
     }
 
     // Withdraw LP tokens from MasterChef.
-    //当前地址提取LP token 并获对应金额取挖矿所得的YMI
+    //当前地址提取LP token 
     //param：_pid，  pool id (即通过pool id 可以找到对应池的的地址)
     //param：_amount, 提取的金额
     function withdraw(uint256 _pid, uint256 _amount) public {
@@ -261,8 +265,15 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
+
         uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
-        safeHbtTransfer(msg.sender, pending);
+        address refer = playerBook.getPlayerLaffAddress(msg.sender);
+        uint256 referRewardRate = playerBook._referRewardRate();
+        uint256 baseRate = playerBook._baseRate();
+        uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
+        safeHbtTransfer(msg.sender, pending.sub(toRefer));
+        safeHbtTransfer(refer, toRefer);
+
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
@@ -299,7 +310,7 @@ contract MasterChef is Ownable {
         devaddr = _devaddr;
     }
 
-    //收益锁定
+    //收益锁定  没有约束_times 不传的情况
     function profitLock(uint256 _pid, uint256 _times) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -308,6 +319,15 @@ contract MasterChef is Ownable {
         
         uint256 _pendingTimes = pending.mul(_times).div(10);
         hbt.allowMint(address(this), _pendingTimes.sub(pending));
+
+        /**
+        uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
+        address refer = playerBook.getPlayerLaffAddress(msg.sender);
+        uint256 referRewardRate = playerBook._referRewardRate();
+        uint256 baseRate = playerBook._baseRate();
+        uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
+        safeHbtTransfer(msg.sender, pending.sub(toRefer));
+        safeHbtTransfer(refer, toRefer); */
 
         safeHbtTransfer(address(hbtLock), _pendingTimes);
         hbtLock.disposit(msg.sender,pending,_times);

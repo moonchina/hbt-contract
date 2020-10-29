@@ -49,7 +49,7 @@ contract HBTLock is Ownable {
         times[25] = 1200;
     }
 
-    //masterChef
+    //masterChef  owner权限没有设置
     function setMasterChef(address _address) public returns (bool) {
         masterChef = _address;
     }
@@ -96,7 +96,7 @@ contract HBTLock is Ownable {
         return (unlockNumber,unlockDispositNumber);
     }
     
-    //提取
+    //提取  提完现 状态没有更新
     function  withdraw() public {
 
         uint256 unlockNumber;
