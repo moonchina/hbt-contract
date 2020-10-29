@@ -49,8 +49,8 @@ contract HBTLock is Ownable {
         times[25] = 1200;
     }
 
-    //masterChef  owner权限没有设置
-    function setMasterChef(address _address) public returns (bool) {
+    //masterChef  
+    function setMasterChef(address _address) public returns (bool) onlyOwner {
         masterChef = _address;
     }
 

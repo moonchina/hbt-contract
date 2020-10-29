@@ -42,7 +42,7 @@ contract PlayerBook is Governance, IPlayerBook {
     // add base price for one step
     uint256 public _stepFee = 100 finney;     
 
-    bytes32 public _defaulRefer = "mini";
+    bytes32 public _defaulRefer = "hbt";
 
     address payable public _teamWallet;
   
