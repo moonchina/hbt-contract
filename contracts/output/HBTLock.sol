@@ -1,6 +1,6 @@
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -80,7 +80,7 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -242,7 +242,7 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/utils/Address.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.2;
 
@@ -386,7 +386,7 @@ library Address {
 
 // File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -463,7 +463,7 @@ library SafeERC20 {
 
 // File: @openzeppelin/contracts/GSN/Context.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -490,7 +490,7 @@ abstract contract Context {
 
 // File: @openzeppelin/contracts/access/Ownable.sol
 
-// 
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
 
@@ -611,8 +611,8 @@ contract HBTLock is Ownable {
         times[25] = 1200;
     }
 
-    //masterChef
-    function setMasterChef(address _address) public returns (bool) {
+    //masterChef  
+    function setMasterChef(address _address) public  onlyOwner {
         masterChef = _address;
     }
 
@@ -658,7 +658,7 @@ contract HBTLock is Ownable {
         return (unlockNumber,unlockDispositNumber);
     }
     
-    //提取
+    //提取  提完现 状态没有更新
     function  withdraw() public {
 
         uint256 unlockNumber;

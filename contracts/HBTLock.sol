@@ -50,7 +50,7 @@ contract HBTLock is Ownable {
     }
 
     //masterChef  
-    function setMasterChef(address _address) public returns (bool) onlyOwner {
+    function setMasterChef(address _address) public  onlyOwner {
         masterChef = _address;
     }
 
@@ -90,13 +90,14 @@ contract HBTLock is Ownable {
                 unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
             }
         }
+        //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
         unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
         unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
 
         return (unlockNumber,unlockDispositNumber);
     }
     
-    //提取  提完现 状态没有更新
+    //提取  提完现 
     function  withdraw() public {
 
         uint256 unlockNumber;
