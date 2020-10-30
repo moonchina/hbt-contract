@@ -18,6 +18,7 @@ contract HBTLock is Ownable {
 
     address public masterChef;
     IERC20 public hbtSafe;
+    unit256 public depositCountTotal = 100;   //用户最大抵押次数
 
     //锁定记录struct
     struct DepositInfo {
@@ -33,6 +34,7 @@ contract HBTLock is Ownable {
         uint256 deposit;            //抵押数量
         uint256 pickDeposit;        //已解锁数量
         uint256 pickTimesAward;     //已解锁倍数奖励
+        uint256 depositCount;       //抵押次数
     }
     mapping (address => UserInfo) public userInfo;    //用户记录
 
