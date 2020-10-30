@@ -61,6 +61,7 @@ contract HBTLock is Ownable {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
+        require(depositCountTotal > userInfo[_address], "HBTLock: The maximum mortgage times have been exceeded");
 
         uint256 _endBlockTime = times[_times];
         timesAwardTotal = timesAwardTotal.add(_number.mul(_times).div(10)).sub(_number);

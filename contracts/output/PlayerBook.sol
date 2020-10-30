@@ -1,83 +1,3 @@
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
 // SPDX-License-Identifier: MIT
@@ -238,6 +158,86 @@ library SafeMath {
         require(b != 0, errorMessage);
         return a % b;
     }
+}
+
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 // File: @openzeppelin/contracts/utils/Address.sol
@@ -461,225 +461,467 @@ library SafeERC20 {
     }
 }
 
-// File: @openzeppelin/contracts/GSN/Context.sol
+// File: contracts/library/Governance.sol
 
-// SPDX-License-Identifier: MIT
+pragma solidity ^0.5.0;
 
-pragma solidity ^0.6.0;
+contract Governance {
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+    address public _governance;
+
+    constructor() public {
+        _governance = tx.origin;
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    event GovernanceTransferred(address indexed previousOwner, address indexed newOwner);
+
+    modifier onlyGovernance {
+        require(msg.sender == _governance, "not governance");
+        _;
     }
+
+    function setGovernance(address governance)  public  onlyGovernance
+    {
+        require(governance != address(0), "new governance the zero address");
+        emit GovernanceTransferred(_governance, governance);
+        _governance = governance;
+    }
+
+
 }
 
-// File: @openzeppelin/contracts/access/Ownable.sol
+// File: contracts/interface/IPlayerBook.sol
 
-// SPDX-License-Identifier: MIT
+pragma solidity ^0.5.0;
 
-pragma solidity ^0.6.0;
 
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
+interface IPlayerBook {
+    function settleReward( address from,uint256 amount ) external returns (uint256);
+    function bindRefer( address from,string calldata  affCode )  external returns (bool);
+    function hasRefer(address from) external returns(bool);
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+}
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
+// File: contracts/PlayerBook.sol
+
+pragma solidity ^0.5.0;
+
+// import '@openzeppelin/contracts/ownership/Ownable.sol';
+
+// import "../library/NameFilter.sol";
+// import "../library/SafeERC20.sol";
+
+
+
+contract PlayerBook is Governance, IPlayerBook {
+    using NameFilter for string;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+ 
+    // register pools       
+    mapping (address => bool) public _pools;
+
+    // (addr => pID) returns player id by address
+    mapping (address => uint256) public _pIDxAddr;   
+    // (name => pID) returns player id by name      
+    mapping (bytes32 => uint256) public _pIDxName;    
+    // (pID => data) player data     
+    mapping (uint256 => Player) public _plyr;      
+    // (pID => name => bool) list of names a player owns.  (used so you can change your display name amoungst any name you own)        
+    mapping (uint256 => mapping (bytes32 => bool)) public _plyrNames; 
+  
+    // total number of players
+    uint256 public _pID;
+    // total register name count
+    uint256 public _totalRegisterCount = 0;
+
+    // the direct refer's reward rate
+    uint256 public _referRewardRate = 1000; //10%
+    // base rate
+    uint256 public _baseRate = 10000;
+
+    // base price to register a name
+    uint256 public _registrationBaseFee = 10 finney;     
+    // register fee count step
+    uint256 public _registrationStep = 100;
+    // add base price for one step
+    uint256 public _stepFee = 10 finney;     
+
+    bytes32 public _defaulRefer = "hbt";
+
+    address payable public _teamWallet;
+  
+    struct Player {
+        address addr;
+        bytes32 name;
+        uint8 nameCount;
+        uint256 laff;
+        uint256 lvCount;
+    }
+
+    event eveBindRefer(uint256 pID, address addr, bytes32 name, uint256 affID, address affAddr, bytes32 affName);
+    event eveDefaultPlayer(uint256 pID, address addr, bytes32 name);      
+    event eveNewName(uint256 pID, address addr, bytes32 name, uint256 affID, address affAddr, bytes32 affName, uint256 balance  );
+    event eveAddPool(address addr);
+    event eveRemovePool(address addr);
+
+
+    constructor(address payable teamWallet)
+        public
+    {
+        _pID = 0;
+        _teamWallet = teamWallet;
+        addDefaultPlayer(_teamWallet,_defaulRefer);
     }
 
     /**
-     * @dev Returns the address of the current owner.
+     * check address
      */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+    modifier validAddress( address addr ) {
+        require(addr != address(0x0));
         _;
     }
 
     /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
+     * check pool
      */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
+    modifier isRegisteredPool(){
+        require(_pools[msg.sender],"invalid pool address!");
+        _;
+    }
+
+    // only function for creating additional rewards from dust
+    function seize(IERC20 asset) external returns (uint256 balance) {
+        balance = asset.balanceOf(address(this));
+        asset.safeTransfer(_teamWallet, balance);
+    }
+
+    // get register fee 
+    function seizeEth() external  {
+        uint256 _currentBalance =  address(this).balance;
+        _teamWallet.transfer(_currentBalance);
+    }
+    
+    /**
+     * revert invalid transfer action
+     */
+    function() external payable {
+        revert();
+    }
+
+
+    /**
+     * registe a pool
+     */
+    function addPool(address poolAddr)
+        onlyGovernance
+        public
+    {
+        require( !_pools[poolAddr], "derp, that pool already been registered");
+
+        _pools[poolAddr] = true;
+
+        emit eveAddPool(poolAddr);
+    }
+    
+    /**
+     * remove a pool
+     */
+    function removePool(address poolAddr)
+        onlyGovernance
+        public
+    {
+        require( _pools[poolAddr], "derp, that pool must be registered");
+
+        _pools[poolAddr] = false;
+
+        emit eveRemovePool(poolAddr);
     }
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
+     * check name string
+     * 查询某个名字是否可以注册
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
+    function checkIfNameValid(string memory nameStr)
+        public
+        view
+        returns(bool)
+    {
+        bytes32 name = nameStr.nameFilter();
+        if (_pIDxName[name] == 0)
+            return (true);
+        else 
+            return (false);
     }
-}
+    
+    /**
+     * @dev add a default player
+     */
+    function addDefaultPlayer(address addr, bytes32 name)
+        private
+    {        
+        _pID++;
 
-// File: contracts/HBTLock.sol
+        _plyr[_pID].addr = addr;
+        _plyr[_pID].name = name;
+        _plyr[_pID].nameCount = 1;
+        _pIDxAddr[addr] = _pID;
+        _pIDxName[name] = _pID;
+        _plyrNames[_pID][name] = true;
 
-pragma solidity 0.6.12;
-
-
-// import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-
-
-
-
-contract HBTLock is Ownable {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-
-    uint256 public blockTime = 15;       //出块时长
-    uint256 public timesAwardTotal;      //倍数总奖励
-    uint256 public depositTotal;         //抵押总数量
-    uint256 public pickDepositTotal;     //已解锁数量
-    uint256 public pickTimesAwardTotal;  //已解锁倍数奖励
-
-    address public masterChef;
-    IERC20 public hbtSafe;
-    unit256 public depositCountTotal = 100;   //用户最大抵押次数
-
-    //锁定记录struct
-    struct DepositInfo {
-        uint256 endBlock;    //抵押结束区块号
-        uint256 number;      //抵押数量
-        uint256 times;       //倍数
+        //fire event
+        emit eveDefaultPlayer(_pID,addr,name);        
     }
-    mapping (address => DepositInfo[]) public depositInfo;    //锁定记录
-
-    //用户信息
-    struct UserInfo {
-        uint256 timesAward;         //倍数奖励
-        uint256 deposit;            //抵押数量
-        uint256 pickDeposit;        //已解锁数量
-        uint256 pickTimesAward;     //已解锁倍数奖励
-        uint256 depositCount;       //抵押次数
-    }
-    mapping (address => UserInfo) public userInfo;    //用户记录
-
-    //times
-    mapping (uint256 => uint256) times;
-
-    constructor(
-        IERC20 _hbt          //HBT Token合约地址
-    ) public {
-        hbtSafe = _hbt;
-
-        times[15] = 300;
-        times[20] = 600;
-        times[25] = 1200;
+    
+    /**
+     * @dev set refer reward rate
+     */
+    function setReferRewardRate(uint256 referRate) public  
+        onlyGovernance
+    {
+        _referRewardRate = referRate;
     }
 
-    //masterChef  
-    function setMasterChef(address _address) public  onlyOwner {
-        masterChef = _address;
+    /**
+     * @dev set registration step count
+     */
+    function setRegistrationStep(uint256 registrationStep) public  
+        onlyGovernance
+    {
+        _registrationStep = registrationStep;
     }
 
-    //抵押
-    function disposit(address _address, uint256 _number, uint256 _times) public returns (bool) {
-        require(_number > 0, "HBTLock:disposit _number Less than zero");
-        require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
-        require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
-        require(depositCountTotal > userInfo[_address], "HBTLock: The maximum mortgage times have been exceeded");
+    /**
+     * @dev registers a name.  UI will always display the last name you registered.
+     * but you will still own all previously registered names to use as affiliate 
+     * links.
+     * - must pay a registration fee.
+     * - name must be unique
+     * - names will be converted to lowercase
+     * - cannot be only numbers
+     * - cannot start with 0x 
+     * - name must be at least 1 char
+     * - max length of 32 characters long
+     * - allowed characters: a-z, 0-9
+     * -functionhash- 0x921dec21 (using ID for affiliate)
+     * -functionhash- 0x3ddd4698 (using address for affiliate)
+     * -functionhash- 0x685ffd83 (using name for affiliate)
+     * @param nameString players desired name
+     * @param affCode affiliate name of who refered you
+     * (this might cost a lot of gas)
+     */
 
-        uint256 _endBlockTime = times[_times];
-        timesAwardTotal = timesAwardTotal.add(_number.mul(_times).div(10)).sub(_number);
-        depositTotal = depositTotal.add(_number);
+    /**
+    参数类型：(string memory nameString, string memory affCode) //自己的名字，邀请人的名字
+说明：如果邀请人的名字为“”意味着没有邀请者
+	每一次注册是需要支付手续费的，【0，99）号用户收取100 finney，【100，199）200 ～
+     */
+    function registerNameXName(string memory nameString, string memory affCode)
+        public
+        payable 
+    {
 
-        userInfo[_address].timesAward.add(_number.mul(_times).div(10).sub(_number));
-        userInfo[_address].deposit.add(_number);
+        // make sure name fees paid
+        require (msg.value >= this.getRegistrationFee(), "umm.....  you have to pay the name fee");
 
-        uint256 _endBlock = _endBlockTime.mul(1e12).div(blockTime).div(1e12).add(block.number); //结束时间
-        depositInfo[_address].push(DepositInfo({
-            endBlock: _endBlock,
-            number: _number,
-            times: _times
-        }));
+        // filter name + condition checks
+        bytes32 name = NameFilter.nameFilter(nameString);
+        // if names already has been used
+        require(_pIDxName[name] == 0, "sorry that names already taken");
+
+        // set up address 
+        address addr = msg.sender;
+         // set up our tx event data and determine if player is new or not
+        _determinePID(addr);
+        // fetch player id
+        uint256 pID = _pIDxAddr[addr];
+        // if names already has been used
+        require(_plyrNames[pID][name] == false, "sorry that names already taken");
+
+        // add name to player profile, registry, and name book
+        _plyrNames[pID][name] = true;
+        _pIDxName[name] = pID;   
+        _plyr[pID].name = name;
+        _plyr[pID].nameCount++;
+
+        _totalRegisterCount++;
+
+
+        //try bind a refer
+        if(_plyr[pID].laff == 0){
+
+            bytes memory tempCode = bytes(affCode);
+            bytes32 affName = 0x0;
+            if (tempCode.length >= 0) {
+                assembly {
+                    affName := mload(add(tempCode, 32))
+                }
+            }
+
+            _bindRefer(addr,affName);
+        }
+        uint256 affID = _plyr[pID].laff;
+
+        // fire event
+        emit eveNewName(pID, addr, name, affID, _plyr[affID].addr, _plyr[affID].name, _registrationBaseFee );
+    }
+    
+    /**
+     * @dev bind a refer,if affcode invalid, use default refer
+     */  
+    function bindRefer( address from, string calldata  affCode )
+        isRegisteredPool()
+        external
+        returns (bool)
+    {
+
+        bytes memory tempCode = bytes(affCode);
+        bytes32 affName = 0x0;
+        if (tempCode.length >= 0) {
+            assembly {
+                affName := mload(add(tempCode, 32))
+            }
+        }
+
+        return _bindRefer(from, affName);
+    }
+
+
+    /**
+     * @dev bind a refer,if affcode invalid, use default refer
+     */  
+    function _bindRefer( address from, bytes32  name )
+        validAddress(msg.sender)    
+        validAddress(from)  
+        private
+        returns (bool)
+    {
+        // set up our tx event data and determine if player is new or not
+        _determinePID(from);
+
+        // fetch player id
+        uint256 pID = _pIDxAddr[from];
+        if( _plyr[pID].laff != 0){
+            return false;
+        }
+
+        if (_pIDxName[name] == 0){
+            //unregister name 
+            name = _defaulRefer;
+        }
+      
+        uint256 affID = _pIDxName[name];
+        if( affID == pID){
+            affID = _pIDxName[_defaulRefer];
+        }
+       
+        _plyr[pID].laff = affID;
+        //lvcount
+        _plyr[affID].lvCount++;
+        // fire event
+        emit eveBindRefer(pID, from, name, affID, _plyr[affID].addr, _plyr[affID].name);
 
         return true;
     }
-
-    //可解锁数量
-    function unlockInfo(address _address) public view returns (uint256, uint256) {
-        uint256 _blcokNumber = block.number;
-        uint256 length = depositInfo[_address].length;
-
-        uint256 unlockNumber;
-        uint256 unlockDispositNumber;
-        for (uint256 id = 0; id < length; ++id) {
-            if(depositInfo[_address][id].endBlock < _blcokNumber) {
-                unlockNumber = unlockNumber.add(depositInfo[_address][id].number.mul(depositInfo[_address][id].times).div(10));
-                unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
-            }
+    
+    //
+    function _determinePID(address addr)
+        private
+        returns (bool)
+    {
+        if (_pIDxAddr[addr] == 0)
+        {
+            _pID++;
+            _pIDxAddr[addr] = _pID;
+            _plyr[_pID].addr = addr;
+            
+            // set the new player bool to true
+            return (true);
+        } else {
+            return (false);
         }
-        //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
-        unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
-        unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
-
-        return (unlockNumber,unlockDispositNumber);
     }
     
-    //提取  提完现 
-    function  withdraw() public {
+    function hasRefer(address from) 
+        isRegisteredPool()
+        external 
+        returns(bool) 
+    {
+        _determinePID(from);
+        uint256 pID =  _pIDxAddr[from];
+        return (_plyr[pID].laff > 0);
+    }
 
-        uint256 unlockNumber;
-        uint256 unlockDispositNumber;
-        address _address = address(msg.sender);
+    //查询某个用户的名字
+    function getPlayerName(address from)
+        external
+        view
+        returns (bytes32)
+    {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+            return "";
+        }
+        return (_plyr[pID].name);
+    }
 
-        ( unlockNumber, unlockDispositNumber) = unlockInfo(_address);
-        require(unlockNumber > 0 , "HBTLock: unlock number Less than zero");
+    //查询某个用户的邀请者地址
+    function getPlayerLaffAddress(address from) external view returns(address laffAddress) {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+            return _teamWallet;
+        }
+        uint256 laffID = _plyr[pID].laff;
+        if(laffID == 0) {
+            return _teamWallet;
+        }
+        return _plyr[laffID].addr;
+    }
 
+    //查询某个用户的邀请者的地址
+    function getPlayerLaffName(address from)
+        external
+        view
+        returns (bytes32)
+    {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+             return "";
+        }
 
-        hbtSafe.safeTransfer(_address,unlockNumber);
-        // hbtSafe.safeTransferFrom(address(this),_address,unlockNumber);
+        uint256 aID=_plyr[pID].laff;
+        if( aID== 0){
+            return "";
+        }
 
-        pickDepositTotal = pickDepositTotal.add(unlockDispositNumber);
-        pickTimesAwardTotal = pickTimesAwardTotal.add(unlockNumber.sub(unlockDispositNumber));
+        return (_plyr[aID].name);
+    }
 
-        userInfo[_address].pickDeposit = userInfo[_address].pickDeposit.add(unlockDispositNumber);
-        userInfo[_address].pickTimesAward = userInfo[_address].pickTimesAward.add(unlockNumber.sub(unlockDispositNumber));
+    //查询某个用户的id，邀请者id，邀请数量
+    function getPlayerInfo(address from)
+        external
+        view
+        returns (uint256,uint256,uint256)
+    {
+        uint256 pID = _pIDxAddr[from];
+        if(_pID==0){
+             return (0,0,0);
+        }
+        return (pID,_plyr[pID].laff,_plyr[pID].lvCount);
+    }
+
+    //获取当前注册费用
+    function getRegistrationFee()
+        external
+        view
+        returns (uint256)
+    {
+        if( _totalRegisterCount <_registrationStep || _registrationStep == 0){
+            return _registrationBaseFee;
+        }
+        else{
+            uint256 step = _totalRegisterCount.div(_registrationStep);
+            return _registrationBaseFee.add(step.mul(_stepFee));
+        }
     }
 }

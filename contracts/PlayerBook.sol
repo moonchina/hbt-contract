@@ -36,11 +36,11 @@ contract PlayerBook is Governance, IPlayerBook {
     uint256 public _baseRate = 10000;
 
     // base price to register a name
-    uint256 public _registrationBaseFee = 100 finney;     
+    uint256 public _registrationBaseFee = 10 finney;     
     // register fee count step
     uint256 public _registrationStep = 100;
     // add base price for one step
-    uint256 public _stepFee = 100 finney;     
+    uint256 public _stepFee = 10 finney;     
 
     bytes32 public _defaulRefer = "hbt";
 
