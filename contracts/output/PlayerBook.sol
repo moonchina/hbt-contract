@@ -463,7 +463,7 @@ library SafeERC20 {
 
 // File: contracts/library/Governance.sol
 
-pragma solidity ^0.5.0;
+pragma solidity 0.6.12;
 
 contract Governance {
 
@@ -492,7 +492,7 @@ contract Governance {
 
 // File: contracts/interface/IPlayerBook.sol
 
-pragma solidity ^0.5.0;
+pragma solidity 0.6.12;
 
 
 interface IPlayerBook {
@@ -504,7 +504,7 @@ interface IPlayerBook {
 
 // File: contracts/PlayerBook.sol
 
-pragma solidity ^0.5.0;
+pragma solidity 0.6.12;
 
 // import '@openzeppelin/contracts/ownership/Ownable.sol';
 

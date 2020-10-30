@@ -806,7 +806,7 @@ contract Ownable is Context {
 
 // File: contracts/interface/IPlayerBook.sol
 
-pragma solidity ^0.5.0;
+pragma solidity 0.6.12;
 
 
 interface IPlayerBook {
