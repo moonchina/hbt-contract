@@ -65,7 +65,7 @@ contract MasterChef is Ownable {
     // The HBTLock Contract.
     HBTLock public hbtLock;
     // Dev address.
-    address public devaddr;
+    // address public devaddr;
     // Block number when bonus HBT period ends.
     uint256 public bonusEndBlock;
     // HBT tokens created per block.
@@ -92,14 +92,14 @@ contract MasterChef is Ownable {
     constructor(
         HBTToken _hbt, //HBT Token合约地址
         HBTLock _hbtLock, //HBTLock 合约地址
-        address _devaddr,
+        // address _devaddr,
         uint256 _hbtPerBlock, //每个块产生的HBT Token的数量
         uint256 _startBlock,  //开挖HBT的区块高度
         uint256 _bonusEndBlock //HBT倍数结束块
     ) public {
         hbt = _hbt;
         hbtLock = _hbtLock;
-        devaddr = _devaddr;
+        // devaddr = _devaddr;
         hbtPerBlock = _hbtPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
@@ -232,7 +232,7 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 hbtReward = multiplier.mul(hbtPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        hbt.allowMint(devaddr, hbtReward.div(10));
+        // hbt.allowMint(devaddr, hbtReward.div(10));
         hbt.allowMint(address(this), hbtReward);
         pool.accHbtPerShare = pool.accHbtPerShare.add(hbtReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
@@ -305,10 +305,10 @@ contract MasterChef is Ownable {
     // Update dev address by the previous dev.
     // 设置新的devaddr地址，仅之前的devaddr地址可以操作
     //_devaddr，新的devaddr地址
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
-    }
+    // function dev(address _devaddr) public {
+    //     require(msg.sender == devaddr, "dev: wut?");
+    //     devaddr = _devaddr;
+    // }
 
     //收益锁定  没有约束_times 不传的情况
     function profitLock(uint256 _pid, uint256 _times) public {
