@@ -4,6 +4,7 @@ const MasterChef = artifacts.require('MasterChef');
 const MockERC20 = artifacts.require('MockERC20');
 const HBTToken = artifacts.require('HBTToken');
 const PlayerBook = artifacts.require('PlayerBook');
+const  web3 = require("web3");
 
 contract('HBTLock', ([alice, bob, carol, dev, minter]) => {
     beforeEach(async () => {
