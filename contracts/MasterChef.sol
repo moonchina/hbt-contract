@@ -326,11 +326,11 @@ contract MasterChef is Ownable {
         // safeHbtTransfer(msg.sender, pending.sub(toRefer));
         safeHbtTransfer(refer, toRefer); 
 
-        uint256 _pt = pending.sub(toRefer);
+        uint256 _pt = pending.sub(toRefer); 
         uint256 _pendingTimes = _pt.mul(_times).div(10);
         hbt.allowMint(address(this), _pendingTimes.sub(_pt));
 
         safeHbtTransfer(address(hbtLock), _pendingTimes);
-        hbtLock.disposit(msg.sender,pending,_times);
+        hbtLock.disposit(msg.sender,_pt,_times);
     }
 }
