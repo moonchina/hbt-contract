@@ -580,7 +580,7 @@ contract HBTLock is Ownable {
 
     address public masterChef;
     IERC20 public hbtSafe;
-    unit256 public depositCountTotal = 100;   //用户最大抵押次数
+    uint256 public depositCountTotal = 100;   //用户最大抵押次数
 
     //锁定记录struct
     struct DepositInfo {
@@ -623,7 +623,7 @@ contract HBTLock is Ownable {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
-        require(depositCountTotal > userInfo[_address], "HBTLock: The maximum mortgage times have been exceeded");
+        require(depositCountTotal > userInfo[_address].depositCount, "HBTLock: The maximum mortgage times have been exceeded");
 
         uint256 _endBlockTime = times[_times];
         timesAwardTotal = timesAwardTotal.add(_number.mul(_times).div(10)).sub(_number);

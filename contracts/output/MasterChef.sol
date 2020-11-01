@@ -804,16 +804,548 @@ contract Ownable is Context {
     }
 }
 
+// File: contracts/library/NameFilter.sol
+
+pragma solidity  0.6.12;
+
+library NameFilter {
+    /**
+     * @dev filters name strings
+     * -converts uppercase to lower case.  
+     * -makes sure it does not start/end with a space
+     * -makes sure it does not contain multiple spaces in a row
+     * -cannot be only numbers
+     * -cannot start with 0x 
+     * -restricts characters to A-Z, a-z, 0-9, and space.
+     * @return reprocessed string in bytes32 format
+     */
+    function nameFilter(string memory _input)
+        internal
+        pure
+        returns(bytes32)
+    {
+        bytes memory _temp = bytes(_input);
+        uint256 _length = _temp.length;
+        
+        //sorry limited to 32 characters
+        require (_length <= 32 && _length > 0, "string must be between 1 and 32 characters");
+        // make sure first two characters are not 0x
+        if (_temp[0] == 0x30)
+        {
+            require(_temp[1] != 0x78, "string cannot start with 0x");
+            require(_temp[1] != 0x58, "string cannot start with 0X");
+        }
+        
+        // create a bool to track if we have a non number character
+        bool _hasNonNumber;
+        
+        // convert & check
+        for (uint256 i = 0; i < _length; i++)
+        {
+            // if its uppercase A-Z
+            if (_temp[i] > 0x40 && _temp[i] < 0x5b)
+            {
+                // convert to lower case a-z
+                _temp[i] = byte(uint8(_temp[i]) + 32);
+                
+                // we have a non number
+                if (_hasNonNumber == false)
+                    _hasNonNumber = true;
+            } else {
+                require
+                (
+                    // OR lowercase a-z
+                    (_temp[i] > 0x60 && _temp[i] < 0x7b) ||
+                    // or 0-9
+                    (_temp[i] > 0x2f && _temp[i] < 0x3a),
+                    "string contains invalid characters"
+                );
+                
+                // see if we have a character other than a number
+                if (_hasNonNumber == false && (_temp[i] < 0x30 || _temp[i] > 0x39))
+                    _hasNonNumber = true;    
+            }
+        }
+        
+        require(_hasNonNumber == true, "string cannot be only numbers");
+        
+        bytes32 _ret;
+        assembly {
+            _ret := mload(add(_temp, 32))
+        }
+        return (_ret);
+    }
+}
+
+// File: contracts/library/Governance.sol
+
+pragma solidity  0.6.12;
+
+contract Governance {
+
+    address public _governance;
+
+    constructor() public {
+        _governance = tx.origin;
+    }
+
+    event GovernanceTransferred(address indexed previousOwner, address indexed newOwner);
+
+    modifier onlyGovernance {
+        require(msg.sender == _governance, "not governance");
+        _;
+    }
+
+    function setGovernance(address governance)  public  onlyGovernance
+    {
+        require(governance != address(0), "new governance the zero address");
+        emit GovernanceTransferred(_governance, governance);
+        _governance = governance;
+    }
+
+
+}
+
 // File: contracts/interface/IPlayerBook.sol
 
-pragma solidity 0.6.12;
+pragma solidity  0.6.12;
 
 
 interface IPlayerBook {
     function settleReward( address from,uint256 amount ) external returns (uint256);
-    function bindRefer( address from,string calldata  affCode )  external returns (bool);
-    function hasRefer(address from) external returns(bool);
+    function bindRefer( address from,string calldata  affCode ) external  returns (bool);
+    function hasRefer(address from)  external returns(bool);
+    function getPlayerLaffAddress(address from) external returns(address); 
 
+}
+
+// File: contracts/PlayerBook.sol
+
+pragma solidity  0.6.12;
+
+// import '@openzeppelin/contracts/ownership/Ownable.sol';
+
+
+// import "../library/SafeERC20.sol";
+
+
+
+contract PlayerBook is Governance {
+    using NameFilter for string;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+ 
+    // register pools       
+    mapping (address => bool) public _pools;
+
+    // (addr => pID) returns player id by address
+    mapping (address => uint256) public _pIDxAddr;   
+    // (name => pID) returns player id by name      
+    mapping (bytes32 => uint256) public _pIDxName;    
+    // (pID => data) player data     
+    mapping (uint256 => Player) public _plyr;      
+    // (pID => name => bool) list of names a player owns.  (used so you can change your display name amoungst any name you own)        
+    mapping (uint256 => mapping (bytes32 => bool)) public _plyrNames; 
+  
+    // total number of players
+    uint256 public _pID;
+    // total register name count
+    uint256 public _totalRegisterCount = 0;
+
+    // the direct refer's reward rate
+    uint256 public _referRewardRate = 1000; //10%
+    // base rate
+    uint256 public _baseRate = 10000;
+
+    // base price to register a name
+    uint256 public _registrationBaseFee = 10 finney;     
+    // register fee count step
+    uint256 public _registrationStep = 100;
+    // add base price for one step
+    uint256 public _stepFee = 10 finney;     
+
+    bytes32 public _defaulRefer = "hbt";
+
+    address payable public _teamWallet;
+  
+    struct Player {
+        address addr;
+        bytes32 name;
+        uint8 nameCount;
+        uint256 laff;
+        uint256 lvCount;
+    }
+
+    event eveBindRefer(uint256 pID, address addr, bytes32 name, uint256 affID, address affAddr, bytes32 affName);
+    event eveDefaultPlayer(uint256 pID, address addr, bytes32 name);      
+    event eveNewName(uint256 pID, address addr, bytes32 name, uint256 affID, address affAddr, bytes32 affName, uint256 balance  );
+    event eveAddPool(address addr);
+    event eveRemovePool(address addr);
+
+
+    constructor(address payable teamWallet)
+        public
+    {
+        _pID = 0;
+        _teamWallet = teamWallet;
+        addDefaultPlayer(_teamWallet,_defaulRefer);
+    }
+
+    /**
+     * check address
+     */
+    modifier validAddress( address addr ) {
+        require(addr != address(0x0));
+        _;
+    }
+
+    /**
+     * check pool
+     */
+    modifier isRegisteredPool(){
+        require(_pools[msg.sender],"invalid pool address!");
+        _;
+    }
+
+    // only function for creating additional rewards from dust
+    function seize(IERC20 asset) external returns (uint256 balance) {
+        balance = asset.balanceOf(address(this));
+        asset.safeTransfer(_teamWallet, balance);
+    }
+
+    // get register fee 
+    function seizeEth() external  {
+        uint256 _currentBalance =  address(this).balance;
+        _teamWallet.transfer(_currentBalance);
+    }
+    
+    /**
+     * revert invalid transfer action
+     */
+    fallback() external payable {
+        revert();
+    }
+
+    receive() external payable {
+        revert();
+    }
+
+    /**
+     * registe a pool
+     */
+    function addPool(address poolAddr)
+        onlyGovernance
+        public
+    {
+        require( !_pools[poolAddr], "derp, that pool already been registered");
+
+        _pools[poolAddr] = true;
+
+        emit eveAddPool(poolAddr);
+    }
+    
+    /**
+     * remove a pool
+     */
+    function removePool(address poolAddr)
+        onlyGovernance
+        public
+    {
+        require( _pools[poolAddr], "derp, that pool must be registered");
+
+        _pools[poolAddr] = false;
+
+        emit eveRemovePool(poolAddr);
+    }
+
+    /**
+     * check name string
+     * 查询某个名字是否可以注册
+     */
+    function checkIfNameValid(string memory nameStr)
+        public
+        view
+        returns(bool)
+    {
+        bytes32 name = nameStr.nameFilter();
+        if (_pIDxName[name] == 0)
+            return (true);
+        else 
+            return (false);
+    }
+    
+    /**
+     * @dev add a default player
+     */
+    function addDefaultPlayer(address addr, bytes32 name)
+        private
+    {        
+        _pID++;
+
+        _plyr[_pID].addr = addr;
+        _plyr[_pID].name = name;
+        _plyr[_pID].nameCount = 1;
+        _pIDxAddr[addr] = _pID;
+        _pIDxName[name] = _pID;
+        _plyrNames[_pID][name] = true;
+
+        //fire event
+        emit eveDefaultPlayer(_pID,addr,name);        
+    }
+    
+    /**
+     * @dev set refer reward rate
+     */
+    function setReferRewardRate(uint256 referRate) public  
+        onlyGovernance
+    {
+        _referRewardRate = referRate;
+    }
+
+    /**
+     * @dev set registration step count
+     */
+    function setRegistrationStep(uint256 registrationStep) public  
+        onlyGovernance
+    {
+        _registrationStep = registrationStep;
+    }
+
+    /**
+     * @dev registers a name.  UI will always display the last name you registered.
+     * but you will still own all previously registered names to use as affiliate 
+     * links.
+     * - must pay a registration fee.
+     * - name must be unique
+     * - names will be converted to lowercase
+     * - cannot be only numbers
+     * - cannot start with 0x 
+     * - name must be at least 1 char
+     * - max length of 32 characters long
+     * - allowed characters: a-z, 0-9
+     * -functionhash- 0x921dec21 (using ID for affiliate)
+     * -functionhash- 0x3ddd4698 (using address for affiliate)
+     * -functionhash- 0x685ffd83 (using name for affiliate)
+     * @param nameString players desired name
+     * @param affCode affiliate name of who refered you
+     * (this might cost a lot of gas)
+     */
+
+    /**
+    参数类型：(string memory nameString, string memory affCode) //自己的名字，邀请人的名字
+说明：如果邀请人的名字为“”意味着没有邀请者
+	每一次注册是需要支付手续费的，【0，99）号用户收取100 finney，【100，199）200 ～
+     */
+    function registerNameXName(string memory nameString, string memory affCode)
+        public
+        payable 
+    {
+
+        // make sure name fees paid
+        require (msg.value >= this.getRegistrationFee(), "umm.....  you have to pay the name fee");
+
+        // filter name + condition checks
+        bytes32 name = NameFilter.nameFilter(nameString);
+        // if names already has been used
+        require(_pIDxName[name] == 0, "sorry that names already taken");
+
+        // set up address 
+        address addr = msg.sender;
+         // set up our tx event data and determine if player is new or not
+        _determinePID(addr);
+        // fetch player id
+        uint256 pID = _pIDxAddr[addr];
+        // if names already has been used
+        require(_plyrNames[pID][name] == false, "sorry that names already taken");
+
+        // add name to player profile, registry, and name book
+        _plyrNames[pID][name] = true;
+        _pIDxName[name] = pID;   
+        _plyr[pID].name = name;
+        _plyr[pID].nameCount++;
+
+        _totalRegisterCount++;
+
+
+        //try bind a refer
+        if(_plyr[pID].laff == 0){
+
+            bytes memory tempCode = bytes(affCode);
+            bytes32 affName = 0x0;
+            if (tempCode.length >= 0) {
+                assembly {
+                    affName := mload(add(tempCode, 32))
+                }
+            }
+
+            _bindRefer(addr,affName);
+        }
+        uint256 affID = _plyr[pID].laff;
+
+        // fire event
+        emit eveNewName(pID, addr, name, affID, _plyr[affID].addr, _plyr[affID].name, _registrationBaseFee );
+    }
+    
+    /**
+     * @dev bind a refer,if affcode invalid, use default refer
+     */  
+    function bindRefer( address from, string calldata  affCode )
+        isRegisteredPool()
+        external
+        // override
+        returns (bool)
+    {
+
+        bytes memory tempCode = bytes(affCode);
+        bytes32 affName = 0x0;
+        if (tempCode.length >= 0) {
+            assembly {
+                affName := mload(add(tempCode, 32))
+            }
+        }
+
+        return _bindRefer(from, affName);
+    }
+
+
+    /**
+     * @dev bind a refer,if affcode invalid, use default refer
+     */  
+    function _bindRefer( address from, bytes32  name )
+        validAddress(msg.sender)    
+        validAddress(from)  
+        private
+        returns (bool)
+    {
+        // set up our tx event data and determine if player is new or not
+        _determinePID(from);
+
+        // fetch player id
+        uint256 pID = _pIDxAddr[from];
+        if( _plyr[pID].laff != 0){
+            return false;
+        }
+
+        if (_pIDxName[name] == 0){
+            //unregister name 
+            name = _defaulRefer;
+        }
+      
+        uint256 affID = _pIDxName[name];
+        if( affID == pID){
+            affID = _pIDxName[_defaulRefer];
+        }
+       
+        _plyr[pID].laff = affID;
+        //lvcount
+        _plyr[affID].lvCount++;
+        // fire event
+        emit eveBindRefer(pID, from, name, affID, _plyr[affID].addr, _plyr[affID].name);
+
+        return true;
+    }
+    
+    //
+    function _determinePID(address addr)
+        private
+        returns (bool)
+    {
+        if (_pIDxAddr[addr] == 0)
+        {
+            _pID++;
+            _pIDxAddr[addr] = _pID;
+            _plyr[_pID].addr = addr;
+            
+            // set the new player bool to true
+            return (true);
+        } else {
+            return (false);
+        }
+    }
+    
+    function hasRefer(address from) 
+        isRegisteredPool()
+        external 
+        // override
+        returns(bool) 
+    {
+        _determinePID(from);
+        uint256 pID =  _pIDxAddr[from];
+        return (_plyr[pID].laff > 0);
+    }
+
+    //查询某个用户的名字
+    function getPlayerName(address from)
+        external
+        view
+        returns (bytes32)
+    {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+            return "";
+        }
+        return (_plyr[pID].name);
+    }
+
+    //查询某个用户的邀请者地址
+    function getPlayerLaffAddress(address from) external  view returns(address laffAddress) {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+            return _teamWallet;
+        }
+        uint256 laffID = _plyr[pID].laff;
+        if(laffID == 0) {
+            return _teamWallet;
+        }
+        return _plyr[laffID].addr;
+    }
+
+    //查询某个用户的邀请者的地址
+    function getPlayerLaffName(address from)
+        external
+        view
+        returns (bytes32)
+    {
+        uint256 pID =  _pIDxAddr[from];
+        if(_pID==0){
+             return "";
+        }
+
+        uint256 aID=_plyr[pID].laff;
+        if( aID== 0){
+            return "";
+        }
+
+        return (_plyr[aID].name);
+    }
+
+    //查询某个用户的id，邀请者id，邀请数量
+    function getPlayerInfo(address from)
+        external
+        view
+        returns (uint256,uint256,uint256)
+    {
+        uint256 pID = _pIDxAddr[from];
+        if(_pID==0){
+             return (0,0,0);
+        }
+        return (pID,_plyr[pID].laff,_plyr[pID].lvCount);
+    }
+
+    //获取当前注册费用
+    function getRegistrationFee()
+        external
+        view
+        returns (uint256)
+    {
+        if( _totalRegisterCount <_registrationStep || _registrationStep == 0){
+            return _registrationBaseFee;
+        }
+        else{
+            uint256 step = _totalRegisterCount.div(_registrationStep);
+            return _registrationBaseFee.add(step.mul(_stepFee));
+        }
+    }
 }
 
 // File: @openzeppelin/contracts/token/ERC20/ERC20.sol
@@ -1429,7 +1961,7 @@ contract HBTLock is Ownable {
 
     address public masterChef;
     IERC20 public hbtSafe;
-    unit256 public depositCountTotal = 100;   //用户最大抵押次数
+    uint256 public depositCountTotal = 100;   //用户最大抵押次数
 
     //锁定记录struct
     struct DepositInfo {
@@ -1472,7 +2004,7 @@ contract HBTLock is Ownable {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
-        require(depositCountTotal > userInfo[_address], "HBTLock: The maximum mortgage times have been exceeded");
+        require(depositCountTotal > userInfo[_address].depositCount, "HBTLock: The maximum mortgage times have been exceeded");
 
         uint256 _endBlockTime = times[_times];
         timesAwardTotal = timesAwardTotal.add(_number.mul(_times).div(10)).sub(_number);
@@ -1619,7 +2151,7 @@ contract MasterChef is Ownable {
     // The block number when HBT mining starts.
     uint256 public startBlock;
 
-    IPlayerBook public playerBook;
+    PlayerBook public playerBook;
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -1630,7 +2162,8 @@ contract MasterChef is Ownable {
         // address _devaddr,
         uint256 _hbtPerBlock, //每个块产生的HBT Token的数量
         uint256 _startBlock,  //开挖HBT的区块高度
-        uint256 _bonusEndBlock //HBT倍数结束块
+        uint256 _bonusEndBlock, //HBT倍数结束块
+        address payable _playerBook
     ) public {
         hbt = _hbt;
         hbtLock = _hbtLock;
@@ -1639,7 +2172,7 @@ contract MasterChef is Ownable {
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
 
-        playerBook = IPlayerBook(_playerBook);
+        playerBook = PlayerBook(_playerBook);
     }
 
     function poolLength() external view returns (uint256) {

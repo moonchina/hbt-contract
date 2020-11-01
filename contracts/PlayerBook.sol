@@ -1,14 +1,14 @@
-pragma solidity 0.6.12;
+pragma solidity  0.6.12;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 // import '@openzeppelin/contracts/ownership/Ownable.sol';
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-// import "../library/NameFilter.sol";
+import "./library/NameFilter.sol";
 // import "../library/SafeERC20.sol";
 import "./library/Governance.sol";
 import "./interface/IPlayerBook.sol";
 
-contract PlayerBook is Governance, IPlayerBook {
+contract PlayerBook is Governance {
     using NameFilter for string;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -100,10 +100,13 @@ contract PlayerBook is Governance, IPlayerBook {
     /**
      * revert invalid transfer action
      */
-    function() external payable {
+    fallback() external payable {
         revert();
     }
 
+    receive() external payable {
+        revert();
+    }
 
     /**
      * registe a pool
@@ -267,6 +270,7 @@ contract PlayerBook is Governance, IPlayerBook {
     function bindRefer( address from, string calldata  affCode )
         isRegisteredPool()
         external
+        // override
         returns (bool)
     {
 
@@ -340,6 +344,7 @@ contract PlayerBook is Governance, IPlayerBook {
     function hasRefer(address from) 
         isRegisteredPool()
         external 
+        // override
         returns(bool) 
     {
         _determinePID(from);
@@ -361,7 +366,7 @@ contract PlayerBook is Governance, IPlayerBook {
     }
 
     //查询某个用户的邀请者地址
-    function getPlayerLaffAddress(address from) external view returns(address laffAddress) {
+    function getPlayerLaffAddress(address from) external  view returns(address laffAddress) {
         uint256 pID =  _pIDxAddr[from];
         if(_pID==0){
             return _teamWallet;

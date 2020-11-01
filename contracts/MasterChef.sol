@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interface/IPlayerBook.sol";
+import "./PlayerBook.sol";
 import "./HBTToken.sol";
 import "./HBTLock.sol";
 
@@ -84,7 +84,7 @@ contract MasterChef is Ownable {
     // The block number when HBT mining starts.
     uint256 public startBlock;
 
-    IPlayerBook public playerBook;
+    PlayerBook public playerBook;
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -95,7 +95,8 @@ contract MasterChef is Ownable {
         // address _devaddr,
         uint256 _hbtPerBlock, //每个块产生的HBT Token的数量
         uint256 _startBlock,  //开挖HBT的区块高度
-        uint256 _bonusEndBlock //HBT倍数结束块
+        uint256 _bonusEndBlock, //HBT倍数结束块
+        address payable _playerBook
     ) public {
         hbt = _hbt;
         hbtLock = _hbtLock;
@@ -104,7 +105,7 @@ contract MasterChef is Ownable {
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
 
-        playerBook = IPlayerBook(_playerBook);
+        playerBook = PlayerBook(_playerBook);
     }
 
     function poolLength() external view returns (uint256) {
