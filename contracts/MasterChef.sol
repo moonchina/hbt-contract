@@ -88,6 +88,8 @@ contract MasterChef is Ownable {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event ProfitLock(address indexed user, uint256 pt, uint256 times);
+
 
     constructor(
         HBTToken _hbt, //HBT Token合约地址
@@ -281,6 +283,18 @@ contract MasterChef is Ownable {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
+    // extractReward LP tokens from MasterChef.
+    //立即提取挖矿hbt的收益
+    //param：_pid，  pool id (即通过pool id 可以找到对应池的的地址)
+    function extractReward(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+        uint256 pending = user.amount.mul(pool.accHfiPerShare).div(1e12).sub(user.rewardDebt);
+        safeHfiTransfer(msg.sender, pending);
+        emit extractReward(msg.sender, _pid, pending);
+    }
+
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     //当前地址紧急提取指定池的LP Token，但得不到任何YMI,谨慎使用
     //param：_pid，  pool id (即通过pool id 可以找到对应池的的地址)
@@ -332,5 +346,6 @@ contract MasterChef is Ownable {
 
         safeHbtTransfer(address(hbtLock), _pendingTimes);
         hbtLock.disposit(msg.sender,_pt,_times);
+        emit ProfitLock(msg.sender, _pt, _times);
     }
 }

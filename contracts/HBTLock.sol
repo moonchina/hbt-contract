@@ -50,6 +50,7 @@ contract HBTLock is Ownable {
         times[20] = 600;
         times[25] = 1200;
     }
+    event Withdraw(address indexed user,uint256 unlockNumber);
 
     //masterChef  
     function setMasterChef(address _address) public  onlyOwner {
