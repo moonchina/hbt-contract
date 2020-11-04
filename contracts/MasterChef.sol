@@ -90,7 +90,7 @@ contract MasterChef is Ownable {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event ProfitLock(address indexed user, uint256 pt, uint256 times);
+    event ProfitLock(address indexed user, uint256 indexed pid, uint256 pt, uint256 times);
     event ExtractReward(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
@@ -345,7 +345,7 @@ contract MasterChef is Ownable {
 
             safeHbtTransfer(address(hbtLock), _pendingTimes);
             hbtLock.disposit(msg.sender,pending,_times);
-            emit ProfitLock(msg.sender, pending, _times);
+            emit ProfitLock(msg.sender, _pid, pending, _times);
         }
     }
 }
