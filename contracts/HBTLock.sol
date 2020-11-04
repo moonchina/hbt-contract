@@ -57,6 +57,25 @@ contract HBTLock is Ownable {
         masterChef = _address;
     }
 
+    //查询新增锁定记录方式
+    function newDepositInfoMode(address _address) public view returns(uint256 index,bool isNew) {
+         uint256 length = depositInfo[_address].length;
+
+        uint256 index = 0;
+        for (uint256 id = 0; id < length; ++id) {
+            if(depositInfo[_address][id].number == 0){
+                index = id;
+            }
+        }
+
+        bool isNew = true;
+        if(depositInfo[_address][index].endBlock != 0){
+            isNew = false;
+        }
+
+        return (index,isNew);
+    }
+
     //抵押
     function disposit(address _address, uint256 _number, uint256 _times) public returns (bool) {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
@@ -74,11 +93,23 @@ contract HBTLock is Ownable {
         userInfo[_address].depositCount = userInfo[_address].depositCount.add(1);
 
         uint256 _endBlock = _endBlockTime.mul(1e12).div(blockTime).div(1e12).add(block.number); //结束时间
-        depositInfo[_address].push(DepositInfo({
-            endBlock: _endBlock,
-            number: _number,
-            times: _times
-        }));
+
+        uint256 index;
+        bool isNew;
+        {index, isNew} =  newDepositInfoMode(_address);
+
+        if(isNew == true){
+            depositInfo[_address].push(DepositInfo({
+                endBlock: _endBlock,
+                number: _number,
+                times: _times
+            }));
+        }else{
+            depositInfo[_address][index].endBlock = _endBlock;
+            depositInfo[_address][index].number = _number;
+            depositInfo[_address][index].times = _times;
+        }
+
 
         return true;
     }
@@ -115,9 +146,10 @@ contract HBTLock is Ownable {
                 unlockNumber = unlockNumber.add(depositInfo[_address][id].number.mul(depositInfo[_address][id].times).div(10));
                 unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
                 
-                depositInfo[_address][id].endBlock = 0;
+                // depositInfo[_address][id].endBlock = 0;
                 depositInfo[_address][id].number = 0;
-                userInfo[_address].depositCount = userInfo[_address].depositCount.sub(1)
+                userInfo[_address].depositCount = userInfo[_address].depositCount.sub(1);
+                depositInfo[_address][id].times = 0;
             }
         }
         //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
