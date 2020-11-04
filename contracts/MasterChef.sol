@@ -84,12 +84,14 @@ contract MasterChef is Ownable {
     // The block number when HBT mining starts.
     uint256 public startBlock;
 
+    mapping (uint256 => mapping (address => uint256)) public userRewardInfo;
+
     PlayerBook public playerBook;
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event ProfitLock(address indexed user, uint256 pt, uint256 times);
-
+    event ExtractReward(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
         HBTToken _hbt, //HBT Token合约地址
@@ -211,6 +213,15 @@ contract MasterChef is Ownable {
         return user.amount.mul(accHbtPerShare).div(1e12).sub(user.rewardDebt);
     }
 
+    //前端页面查询接口，扣除返佣
+    function pendingHbtShow(uint256 _pid, address _user) external view returns (uint256) {
+
+        uint256 pengding = pendingHbt(_pid,_user);
+        uint256 baseRate = playerBook._baseRate();
+        uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
+        return pengding.sub(toRefer).add(userRewardInfo[_pid][_user])
+    }
+
     // Update reward vairables for all pools. Be careful of gas spending!
     //更新所有池的奖励等信息
     function massUpdatePools() public {
@@ -251,7 +262,15 @@ contract MasterChef is Ownable {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
-            safeHbtTransfer(msg.sender, pending);
+            // safeHbtTransfer(msg.sender, pending);
+            address refer = playerBook.getPlayerLaffAddress(msg.sender);
+            uint256 referRewardRate = playerBook._referRewardRate();
+            uint256 baseRate = playerBook._baseRate();
+            uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
+            // safeHbtTransfer(msg.sender, pending.sub(toRefer));
+            userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer))
+            safeHbtTransfer(refer, toRefer);
+            
         }
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
         user.amount = user.amount.add(_amount);
@@ -269,30 +288,20 @@ contract MasterChef is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
 
+        //user.amount 减少 会影响收益
         uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
         address refer = playerBook.getPlayerLaffAddress(msg.sender);
         uint256 referRewardRate = playerBook._referRewardRate();
         uint256 baseRate = playerBook._baseRate();
         uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
-        safeHbtTransfer(msg.sender, pending.sub(toRefer));
+        // safeHbtTransfer(msg.sender, pending.sub(toRefer));
+        userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer))
         safeHbtTransfer(refer, toRefer);
 
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
-    }
-
-    // extractReward LP tokens from MasterChef.
-    //立即提取挖矿hbt的收益
-    //param：_pid，  pool id (即通过pool id 可以找到对应池的的地址)
-    function extractReward(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accHfiPerShare).div(1e12).sub(user.rewardDebt);
-        safeHfiTransfer(msg.sender, pending);
-        emit extractReward(msg.sender, _pid, pending);
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -317,35 +326,26 @@ contract MasterChef is Ownable {
         }
     }
 
-    // Update dev address by the previous dev.
-    // 设置新的devaddr地址，仅之前的devaddr地址可以操作
-    //_devaddr，新的devaddr地址
-    // function dev(address _devaddr) public {
-    //     require(msg.sender == devaddr, "dev: wut?");
-    //     devaddr = _devaddr;
-    // }
 
     //收益锁定  没有约束_times 不传的情况
-    function profitLock(uint256 _pid, uint256 _times) public {
+    function extractReward(uint256 _pid, uint256 _times, bool _profitLock) public {
+
+        withdraw(_pid,0);
+
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accHbtPerShare).div(1e12).sub(user.rewardDebt);
-    
-        
-        address refer = playerBook.getPlayerLaffAddress(msg.sender);
-        uint256 referRewardRate = playerBook._referRewardRate();
-        uint256 baseRate = playerBook._baseRate();
-        uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
-        // safeHbtTransfer(msg.sender, pending.sub(toRefer));
-        safeHbtTransfer(refer, toRefer); 
+        uint256 pending = userRewardInfo[_pid][msg.sender];
 
-        uint256 _pt = pending.sub(toRefer); 
-        uint256 _pendingTimes = _pt.mul(_times).div(10);
-        hbt.allowMint(address(this), _pendingTimes.sub(_pt));
+        if (_profitLock == false) {
+            safeHbtTransfer(msg.sender, pending);
+            emit ExtractReward(msg.sender, _pid, pending);
+        } else {
+            uint256 _pendingTimes = pending.mul(_times).div(10);
+            hbt.allowMint(address(this), _pendingTimes.sub(pending));
 
-        safeHbtTransfer(address(hbtLock), _pendingTimes);
-        hbtLock.disposit(msg.sender,_pt,_times);
-        emit ProfitLock(msg.sender, _pt, _times);
+            safeHbtTransfer(address(hbtLock), _pendingTimes);
+            hbtLock.disposit(msg.sender,pending,_times);
+            emit ProfitLock(msg.sender, pending, _times);
+        }
     }
 }

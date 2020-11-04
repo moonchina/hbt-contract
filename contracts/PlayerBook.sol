@@ -30,7 +30,7 @@ contract PlayerBook is Governance {
     // total register name count
     uint256 public _totalRegisterCount = 0;
 
-    // the direct refer's reward rate
+    // the direct refer's reward rate  直接推荐人的奖励率
     uint256 public _referRewardRate = 1000; //10%
     // base rate
     uint256 public _baseRate = 10000;

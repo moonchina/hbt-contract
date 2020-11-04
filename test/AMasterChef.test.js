@@ -2,21 +2,26 @@ const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const HBTToken = artifacts.require('HBTToken');
 const MasterChef = artifacts.require('MasterChef');
 const MockERC20 = artifacts.require('MockERC20');
+const HBTLock = artifacts.require('HBTLock');
+const PlayerBook = artifacts.require('PlayerBook');
 
 contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
     beforeEach(async () => {
         this.hbt = await HBTToken.new({ from: alice });
+        this.hbtLock = await HBTLock.new(this.hbt.address,{ from: alice });
+        this.playerBook = await PlayerBook.new(dev,{ from: alice });
+
     });
 
     it('设置正确的状态变量', async () => {
-        this.chef = await MasterChef.new(this.hbt.address, dev, '1000', '0', '1000', { from: alice });
+        this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '0', '1000',this.playerBook.address, { from: alice });
         // await this.hbt.transferOwnership(this.chef.address, { from: alice }); //这个地方和sushi不一样，hbttoken的owner权限没有给masterchef，而是需要加入hbttoken白名单
         const hbt = await this.chef.hbt();
-        const devaddr = await this.chef.devaddr();
+        // const devaddr = await this.chef.devaddr();
         // const owner = await this.hbt.owner();
 
         assert.equal(hbt.valueOf(), this.hbt.address);
-        assert.equal(devaddr.valueOf(), dev);
+        // assert.equal(devaddr.valueOf(), dev);
         // assert.equal(owner.valueOf(), this.chef.address);
 
         //添加htbToken白名单
@@ -26,13 +31,13 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
     });
 
     it('只允许dev更新dev', async () => {
-        this.chef = await MasterChef.new(this.hbt.address, dev, '1000', '0', '1000', { from: alice });
-        assert.equal((await this.chef.devaddr()).valueOf(), dev);
-        await expectRevert(this.chef.dev(bob, { from: bob }), 'dev: wut?');
-        await this.chef.dev(bob, { from: dev });
-        assert.equal((await this.chef.devaddr()).valueOf(), bob);
-        await this.chef.dev(alice, { from: bob });
-        assert.equal((await this.chef.devaddr()).valueOf(), alice);
+        // this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '0', '1000',this.playerBook.address, { from: alice });
+        // // assert.equal((await this.chef.devaddr()).valueOf(), dev);
+        // await expectRevert(this.chef.dev(bob, { from: bob }), 'dev: wut?');
+        // // await this.chef.dev(bob, { from: dev });
+        // // assert.equal((await this.chef.devaddr()).valueOf(), bob);
+        // await this.chef.dev(alice, { from: bob });
+        // assert.equal((await this.chef.devaddr()).valueOf(), alice);
     })
 
     context('将ERC/LP令牌添加到字段中', () => {
@@ -49,7 +54,8 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
 
         it('紧急赎回LP/ERC20', async () => {
             // 100 per block farming rate starting at block 100 with bonus until block 1000
-            this.chef = await MasterChef.new(this.hbt.address, dev, '100', '100', '1000', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '100', '100', '1000',this.playerBook.address, { from: alice });
+
             await this.chef.add('100', this.lp.address, true);
             await this.lp.approve(this.chef.address, '1000', { from: bob });
             await this.chef.deposit(0, '100', { from: bob });
@@ -60,7 +66,8 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
 
         it('在农耕结束后才分发HBT', async () => {
             // 100 per block farming rate starting at block 100 with bonus until block 1000
-            this.chef = await MasterChef.new(this.hbt.address, dev, '100', '100', '1000', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '100', '100', '1000',this.playerBook.address, { from: alice });
+
             // await this.hbt.transferOwnership(this.chef.address, { from: alice });
             this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
 
@@ -85,13 +92,14 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             // console.log("pendingHbt",(await this.chef.pendingHbt(0,bob)).valueOf());
             await this.chef.deposit(0, '0', { from: bob }); // block 105
             assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '500');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '50');
-            assert.equal((await this.hbt.totalSupply()).valueOf(), '550');
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '50');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '500');
         });
 
         it('有人赎回、抵押才发HBTToken', async () => {
             // 100 per block farming rate starting at block 200 with bonus until block 1000
-            this.chef = await MasterChef.new(this.hbt.address, dev, '100', '200', '1000', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '100', '200', '1000',this.playerBook.address, { from: alice });
+
             this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
 
             await this.chef.add('100', this.lp.address, true);
@@ -104,19 +112,22 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             await this.chef.deposit(0, '10', { from: bob }); // block 210
             assert.equal((await this.hbt.totalSupply()).valueOf(), '0');
             assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '0');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '0');
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '0');
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '990');
             await time.advanceBlockTo('219');
+
             await this.chef.withdraw(0, '10', { from: bob }); // block 220
-            assert.equal((await this.hbt.totalSupply()).valueOf(), '1100');
-            assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '1000');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '100');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '1000');
+            assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '900');
+
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '100');
             assert.equal((await this.lp.balanceOf(bob)).valueOf(), '1000');
         });
 
         it('为每个投资者发放收益', async () => {
             // 1000 per block farming rate starting at block 300 with bonus until block 1000
-            this.chef = await MasterChef.new(this.hbt.address, dev, '1000', '300', '1000', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '300', '1000',this.playerBook.address, { from: alice });
+
             this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
 
             await this.chef.add('100', this.lp.address, true);
@@ -137,22 +148,23 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             //   MasterChef should have the remaining: 10000 - 5666 = 4334
             await time.advanceBlockTo('319')
             await this.chef.deposit(0, '10', { from: alice });
-            assert.equal((await this.hbt.totalSupply()).valueOf(), '11000');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '10000');
             assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '5666');
             assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '0');
             assert.equal((await this.hbt.balanceOf(carol)).valueOf(), '0');
             assert.equal((await this.hbt.balanceOf(this.chef.address)).valueOf(), '4334');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '1000');
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '1000');
             // Bob withdraws 5 LPs at block 330. At this point:
             //   Bob should have: 4*2/3*1000 + 2*2/6*1000 + 10*2/7*1000 = 6190
             await time.advanceBlockTo('329')
             await this.chef.withdraw(0, '5', { from: bob });
-            assert.equal((await this.hbt.totalSupply()).valueOf(), '22000');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '20000');
+            console.log("(await this.hbt.balanceOf(alice)).valueOf()",(await this.hbt.balanceOf(alice)).valueOf().toString())
             assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '5666');
-            assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '6190');
+            assert.equal((await this.hbt.balanceOf(bob)).valueOf(), '5571');
             assert.equal((await this.hbt.balanceOf(carol)).valueOf(), '0');
             assert.equal((await this.hbt.balanceOf(this.chef.address)).valueOf(), '8144');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '2000');
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '2000');
             // Alice withdraws 20 LPs at block 340.
             // Bob withdraws 15 LPs at block 350.
             // Carol withdraws 30 LPs at block 360.
@@ -162,8 +174,8 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             await this.chef.withdraw(0, '15', { from: bob });
             await time.advanceBlockTo('359')
             await this.chef.withdraw(0, '30', { from: carol });
-            assert.equal((await this.hbt.totalSupply()).valueOf(), '55000');
-            assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '5000');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '50000');
+            // assert.equal((await this.hbt.balanceOf(dev)).valueOf(), '5000');
             // Alice should have: 5666 + 10*2/7*1000 + 10*2/6.5*1000 = 11600
             assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '11600');
             // Bob should have: 6190 + 10*1.5/6.5 * 1000 + 10*1.5/4.5*1000 = 11831
@@ -178,7 +190,8 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
 
         it('给每个POOL分配HBTToken', async () => {
             // 100 per block farming rate starting at block 400 with bonus until block 1000
-            this.chef = await MasterChef.new(this.hbt.address, dev, '1000', '400', '1000', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '400', '1000',this.playerBook.address, { from: alice });
+
             this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
 
             await this.lp.approve(this.chef.address, '1000', { from: alice });
@@ -206,7 +219,8 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
 
         it('奖励期结束后，应该停止赠送HBT', async () => {
             // 1000 per block farming rate starting at block 500 with bonus until block 600
-            this.chef = await MasterChef.new(this.hbt.address, dev, '1000', '500', '600', { from: alice });
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '500', '600',this.playerBook.address, { from: alice });
+
             this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
 
             await this.lp.approve(this.chef.address, '1000', { from: alice });
@@ -225,7 +239,7 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             // At block 606, Alice withdraws all pending rewards and should get 10600.
             await this.chef.withdraw(0, '0', { from: alice });
             assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '0');
-            assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '16000');
+            assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '14400');
 
             // console.log("(await this.hbt.totalSupply()).valueOf()",(await this.hbt.totalSupply()).valueOf())
             // console.log("(await this.chef.pendingHbt(0, alice)).valueOf()",(await this.chef.pendingHbt(0, alice)).valueOf())
