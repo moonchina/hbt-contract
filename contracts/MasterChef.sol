@@ -116,6 +116,10 @@ contract MasterChef is Ownable {
         return poolInfo.length;
     }
 
+    function getUserRewardInfo(uint256 _pid,address _address) external view returns (uint256) {
+        return userRewardInfo[_pid][_address];
+    }
+
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     //添加新的LP 交易池， 仅合约拥有者可以调用，注意，不能添加相同地址的LP 交易池
@@ -200,7 +204,7 @@ contract MasterChef is Ownable {
     //查询接口，查询当前阶段指定地址_user在_pid池中赚取的YMI
     //param：_pid，  pool id (即通过pool id 可以找到对应池的的地址)
     //param：_user， 用户地址
-    function pendingHbt(uint256 _pid, address _user) external view returns (uint256) {
+    function pendingHbt(uint256 _pid, address _user) public view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accHbtPerShare = pool.accHbtPerShare;
@@ -216,10 +220,11 @@ contract MasterChef is Ownable {
     //前端页面查询接口，扣除返佣
     function pendingHbtShow(uint256 _pid, address _user) external view returns (uint256) {
 
-        uint256 pengding = pendingHbt(_pid,_user);
+        uint256 pending = pendingHbt(_pid,_user);
         uint256 baseRate = playerBook._baseRate();
+        uint256 referRewardRate = playerBook._referRewardRate();
         uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
-        return pengding.sub(toRefer).add(userRewardInfo[_pid][_user])
+        return pending.sub(toRefer).add(userRewardInfo[_pid][_user]);
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -268,7 +273,7 @@ contract MasterChef is Ownable {
             uint256 baseRate = playerBook._baseRate();
             uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
             // safeHbtTransfer(msg.sender, pending.sub(toRefer));
-            userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer))
+            userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer));
             safeHbtTransfer(refer, toRefer);
             
         }
@@ -295,7 +300,7 @@ contract MasterChef is Ownable {
         uint256 baseRate = playerBook._baseRate();
         uint256 toRefer = pending.mul(referRewardRate).div(baseRate);
         // safeHbtTransfer(msg.sender, pending.sub(toRefer));
-        userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer))
+        userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer));
         safeHbtTransfer(refer, toRefer);
 
         user.amount = user.amount.sub(_amount);
@@ -332,8 +337,8 @@ contract MasterChef is Ownable {
 
         withdraw(_pid,0);
 
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        // PoolInfo storage pool = poolInfo[_pid];
+        // UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 pending = userRewardInfo[_pid][msg.sender];
 
         if (_profitLock == false) {
@@ -347,5 +352,7 @@ contract MasterChef is Ownable {
             hbtLock.disposit(msg.sender,pending,_times);
             emit ProfitLock(msg.sender, _pid, pending, _times);
         }
+
+        userRewardInfo[_pid][msg.sender] = 0;
     }
 }

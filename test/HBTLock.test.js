@@ -58,29 +58,31 @@ contract('HBTLock', ([alice, bob, carol, dev, minter]) => {
     it('可解锁数量', async () => {
 
         // 1000 per block farming rate starting at block 500 with bonus until block 600
-        this.chef = await MasterChef.new(this.hbt.address, this.hbtLock.address, '1000', '500', '600', this.playerBook.address, { from: alice });
+        this.chef = await MasterChef.new(this.hbt.address, this.hbtLock.address, '1000', '0', '600', this.playerBook.address, { from: alice });
         this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
         await this.hbtLock.setMasterChef(this.chef.address, { from: alice });
 
         await this.lp.approve(this.chef.address, '1000', { from: alice });
         await this.chef.add('1', this.lp.address, true);
         // Alice deposits 10 LPs at block 590
-        await time.advanceBlockTo('6700');
+        await time.advanceBlockTo('100');
         await this.chef.deposit(0, '10', { from: alice });
         // At block 605, she should have 1000*15 + 100*15 = 10500 pending.
-        await time.advanceBlockTo('6702');
+        await time.advanceBlockTo('102');
      //    assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '15000');
      //    // At block 606, Alice withdraws all pending rewards and should get 10600.
      //    await this.chef.withdraw(0, '0', { from: alice });
      //    assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '0');
      //    assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '16000');
 
-        await this.chef.profitLock(0,15, { from: alice });
-        await time.advanceBlockTo('6752');
+        await this.chef.extractReward(0,15,true, { from: alice });
+        await time.advanceBlockTo('152');
         console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())
         console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
         console.log("this.hbt.balanceOf(this.hbtLock.address))",(await this.hbt.balanceOf(this.hbtLock.address)).toString())
         await this.hbtLock.withdraw({from: alice})
+
+        
         // console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())
         // console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
 

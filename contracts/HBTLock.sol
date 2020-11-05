@@ -58,11 +58,13 @@ contract HBTLock is Ownable {
     }
 
     //查询新增锁定记录方式
-    function newDepositInfoMode(address _address) public view returns(uint256 index,bool isNew) {
-         uint256 length = depositInfo[_address].length;
-
+    function newDepositInfoMode(address _address) public view returns(uint256,bool) {
+        uint256 length = depositInfo[_address].length;
+        if (length == 0 ){
+            return (0,true);
+        }
         uint256 index = 0;
-        for (uint256 id = 0; id < length; ++id) {
+        for (uint256 id = 0; id < length; id++) {
             if(depositInfo[_address][id].number == 0){
                 index = id;
             }
@@ -96,7 +98,8 @@ contract HBTLock is Ownable {
 
         uint256 index;
         bool isNew;
-        {index, isNew} =  newDepositInfoMode(_address);
+
+        (index,isNew) =  newDepositInfoMode(_address);
 
         if(isNew == true){
             depositInfo[_address].push(DepositInfo({
