@@ -331,7 +331,7 @@ contract MasterChef is Ownable {
         }
     }
 
-
+ 
     //收益锁定  没有约束_times 不传的情况
     function extractReward(uint256 _pid, uint256 _times, bool _profitLock) public {
 

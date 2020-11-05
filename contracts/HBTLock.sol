@@ -71,7 +71,7 @@ contract HBTLock is Ownable {
         }
 
         bool isNew = true;
-        if(depositInfo[_address][index].endBlock != 0){
+        if(depositInfo[_address][index].times != 0){  //times 原数据源没有更新times
             isNew = false;
         }
 
@@ -121,9 +121,12 @@ contract HBTLock is Ownable {
     function unlockInfo(address _address) public view returns (uint256, uint256) {
         uint256 _blcokNumber = block.number;
         uint256 length = depositInfo[_address].length;
+        if(length == 0){
+            return (0,0);
+        }
 
-        uint256 unlockNumber;
-        uint256 unlockDispositNumber;
+        uint256 unlockNumber = 0;
+        uint256 unlockDispositNumber = 0;
         for (uint256 id = 0; id < length; ++id) {
             if(depositInfo[_address][id].endBlock < _blcokNumber) {
                 unlockNumber = unlockNumber.add(depositInfo[_address][id].number.mul(depositInfo[_address][id].times).div(10));
@@ -131,8 +134,8 @@ contract HBTLock is Ownable {
             }
         }
         //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
-        unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
-        unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
+        // unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
+        // unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
 
         return (unlockNumber,unlockDispositNumber);
     }
@@ -149,15 +152,15 @@ contract HBTLock is Ownable {
                 unlockNumber = unlockNumber.add(depositInfo[_address][id].number.mul(depositInfo[_address][id].times).div(10));
                 unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
                 
-                // depositInfo[_address][id].endBlock = 0;
+                depositInfo[_address][id].endBlock = 0;
                 depositInfo[_address][id].number = 0;
                 userInfo[_address].depositCount = userInfo[_address].depositCount.sub(1);
-                depositInfo[_address][id].times = 0;
+                // depositInfo[_address][id].times = 0;
             }
         }
         //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
-        unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
-        unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
+        // unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
+        // unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
 
         return (unlockNumber,unlockDispositNumber);
     }
