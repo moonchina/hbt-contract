@@ -137,6 +137,26 @@ contract('MasterChef', ([alice, bob, carol, dev, minter]) => {
             assert.equal((await this.chef.getUserRewardInfo(0,bob)).valueOf(),'0')
         });
 
+        it('普通用户先进行赎回本金', async () => {
+            // 100 per block farming rate starting at block 200 with bonus until block 1000
+            this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '100', '200', '1000',this.playerBook.address, { from: alice });
+
+            this.hbt.setAllowMintAddr(this.chef.address,true); //设置铸币白名单
+
+            await this.chef.add('100', this.lp.address, true);
+            await this.lp.approve(this.chef.address, '1000', { from: bob });
+            await this.lp.approve(this.chef.address, '1000', { from: alice });
+            await time.advanceBlockTo('300');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '0');
+            await time.advanceBlockTo('301');
+            assert.equal((await this.hbt.totalSupply()).valueOf(), '0');
+            await time.advanceBlockTo('302');
+            await this.chef.deposit(0, '10', { from: bob }); // block 210
+            await this.chef.deposit(0, '10', { from: alice }); // block 210
+            await this.chef.withdraw(0, '10', { from: bob }); // block 220
+
+        });
+
         it('为每个投资者发放收益', async () => {
             // 1000 per block farming rate starting at block 300 with bonus until block 1000
             this.chef = await MasterChef.new(this.hbt.address,this.hbtLock.address, '1000', '300', '1000',this.playerBook.address, { from: alice });
