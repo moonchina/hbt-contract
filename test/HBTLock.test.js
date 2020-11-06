@@ -69,6 +69,10 @@ contract('HBTLock', ([alice, bob, carol, dev, minter]) => {
         await this.chef.deposit(0, '10', { from: alice });
         // At block 605, she should have 1000*15 + 100*15 = 10500 pending.
         await time.advanceBlockTo('102');
+
+        console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())
+        console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
+        console.log("this.hbt.balanceOf(this.hbtLock.address))",(await this.hbt.balanceOf(this.hbtLock.address)).toString())
      //    assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '15000');
      //    // At block 606, Alice withdraws all pending rewards and should get 10600.
      //    await this.chef.withdraw(0, '0', { from: alice });
@@ -81,6 +85,10 @@ contract('HBTLock', ([alice, bob, carol, dev, minter]) => {
         console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
         console.log("this.hbt.balanceOf(this.hbtLock.address))",(await this.hbt.balanceOf(this.hbtLock.address)).toString())
         await this.hbtLock.withdraw({from: alice})
+
+        console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())
+        console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
+        console.log("this.hbt.balanceOf(this.hbtLock.address))",(await this.hbt.balanceOf(this.hbtLock.address)).toString())
 
         
         // console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())

@@ -303,10 +303,12 @@ contract MasterChef is Ownable {
         userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer));
         safeHbtTransfer(refer, toRefer);
 
-        user.amount = user.amount.sub(_amount);
-        user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
-        emit Withdraw(msg.sender, _pid, _amount);
+        if(_amount > 0){
+            user.amount = user.amount.sub(_amount);
+            user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
+            pool.lpToken.safeTransfer(address(msg.sender), _amount);
+            emit Withdraw(msg.sender, _pid, _amount);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
