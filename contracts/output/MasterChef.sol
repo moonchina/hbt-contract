@@ -1,6 +1,6 @@
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -80,7 +80,7 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -242,7 +242,7 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/utils/Address.sol
 
-
+// 
 
 pragma solidity ^0.6.2;
 
@@ -386,7 +386,7 @@ library Address {
 
 // File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -463,7 +463,7 @@ library SafeERC20 {
 
 // File: @openzeppelin/contracts/utils/EnumerableSet.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -709,7 +709,7 @@ library EnumerableSet {
 
 // File: @openzeppelin/contracts/GSN/Context.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -736,7 +736,7 @@ abstract contract Context {
 
 // File: @openzeppelin/contracts/access/Ownable.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -1350,7 +1350,7 @@ contract PlayerBook is Governance {
 
 // File: @openzeppelin/contracts/token/ERC20/ERC20.sol
 
-
+// 
 
 pragma solidity ^0.6.0;
 
@@ -1968,6 +1968,8 @@ contract HBTLock is Ownable {
         uint256 endBlock;    //抵押结束区块号
         uint256 number;      //抵押数量
         uint256 times;       //倍数
+        uint256 numberTimes;
+        uint256 hbtBal;
     }
     mapping (address => DepositInfo[]) public depositInfo;    //锁定记录
 
@@ -2007,22 +2009,20 @@ contract HBTLock is Ownable {
             return (0,true);
         }
         uint256 index = 0;
+        bool isNew = true;
+
         for (uint256 id = 0; id < length; id++) {
             if(depositInfo[_address][id].number == 0){
                 index = id;
+                isNew = false;
+                break;
             }
         }
-
-        bool isNew = true;
-        if(depositInfo[_address][index].times != 0){  //times 原数据源没有更新times
-            isNew = false;
-        }
-
         return (index,isNew);
     }
 
     //抵押
-    function disposit(address _address, uint256 _number, uint256 _times) public returns (bool) {
+    function disposit(address _address, uint256 _number, uint256 _times, uint256 _numberTimes,uint256 _hbtBal) public returns (bool) {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
@@ -2048,12 +2048,16 @@ contract HBTLock is Ownable {
             depositInfo[_address].push(DepositInfo({
                 endBlock: _endBlock,
                 number: _number,
-                times: _times
+                times: _times,
+                numberTimes: _numberTimes,
+                hbtBal: _hbtBal
             }));
         }else{
             depositInfo[_address][index].endBlock = _endBlock;
             depositInfo[_address][index].number = _number;
             depositInfo[_address][index].times = _times;
+            depositInfo[_address][index].numberTimes = _numberTimes;
+            depositInfo[_address][index].hbtBal = _hbtBal;
         }
 
 
@@ -2098,7 +2102,7 @@ contract HBTLock is Ownable {
                 depositInfo[_address][id].endBlock = 0;
                 depositInfo[_address][id].number = 0;
                 userInfo[_address].depositCount = userInfo[_address].depositCount.sub(1);
-                // depositInfo[_address][id].times = 0;
+                depositInfo[_address][id].times = 0;
             }
         }
         //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
@@ -2436,8 +2440,10 @@ contract MasterChef is Ownable {
 
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
-        emit Withdraw(msg.sender, _pid, _amount);
+        if(_amount > 0){
+            pool.lpToken.safeTransfer(address(msg.sender), _amount);
+            emit Withdraw(msg.sender, _pid, _amount);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -2454,16 +2460,17 @@ contract MasterChef is Ownable {
 
     // Safe hbt transfer function, just in case if rounding error causes pool to not have enough HBTs.
     function safeHbtTransfer(address _to, uint256 _amount) internal {
-        uint256 hbtBal = hbt.balanceOf(address(this));
-        if (_amount > hbtBal) {
-            hbt.transfer(_to, hbtBal);
-        } else {
-            hbt.transfer(_to, _amount);
-        }
+        // uint256 hbtBal = hbt.balanceOf(address(this));
+        // if (_amount > hbtBal) {
+        //     hbt.transfer(_to, hbtBal);
+        // } else {
+        //     hbt.transfer(_to, _amount);
+        // }
+        hbt.transfer(_to, _amount);
     }
 
  
-    //收益锁定  没有约束_times 不传的情况
+    //提取收益&
     function extractReward(uint256 _pid, uint256 _times, bool _profitLock) public {
 
         withdraw(_pid,0);
@@ -2478,9 +2485,10 @@ contract MasterChef is Ownable {
         } else {
             uint256 _pendingTimes = pending.mul(_times).div(10);
             hbt.allowMint(address(this), _pendingTimes.sub(pending));
+            uint256 hbtBal = hbt.balanceOf(address(this));
 
             safeHbtTransfer(address(hbtLock), _pendingTimes);
-            hbtLock.disposit(msg.sender,pending,_times);
+            hbtLock.disposit(msg.sender,pending,_times,_pendingTimes,hbtBal);
             emit ProfitLock(msg.sender, _pid, pending, _times);
         }
 

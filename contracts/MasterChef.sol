@@ -303,9 +303,9 @@ contract MasterChef is Ownable {
         userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer));
         safeHbtTransfer(refer, toRefer);
 
+        user.amount = user.amount.sub(_amount);
+        user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
         if(_amount > 0){
-            user.amount = user.amount.sub(_amount);
-            user.rewardDebt = user.amount.mul(pool.accHbtPerShare).div(1e12);
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
             emit Withdraw(msg.sender, _pid, _amount);
         }
@@ -325,16 +325,17 @@ contract MasterChef is Ownable {
 
     // Safe hbt transfer function, just in case if rounding error causes pool to not have enough HBTs.
     function safeHbtTransfer(address _to, uint256 _amount) internal {
-        uint256 hbtBal = hbt.balanceOf(address(this));
-        if (_amount > hbtBal) {
-            hbt.transfer(_to, hbtBal);
-        } else {
-            hbt.transfer(_to, _amount);
-        }
+        // uint256 hbtBal = hbt.balanceOf(address(this));
+        // if (_amount > hbtBal) {
+        //     hbt.transfer(_to, hbtBal);
+        // } else {
+        //     hbt.transfer(_to, _amount);
+        // }
+        hbt.transfer(_to, _amount);
     }
 
  
-    //收益锁定  没有约束_times 不传的情况
+    //提取收益&
     function extractReward(uint256 _pid, uint256 _times, bool _profitLock) public {
 
         withdraw(_pid,0);
@@ -349,9 +350,10 @@ contract MasterChef is Ownable {
         } else {
             uint256 _pendingTimes = pending.mul(_times).div(10);
             hbt.allowMint(address(this), _pendingTimes.sub(pending));
+            uint256 hbtBal = hbt.balanceOf(address(this));
 
             safeHbtTransfer(address(hbtLock), _pendingTimes);
-            hbtLock.disposit(msg.sender,pending,_times);
+            hbtLock.disposit(msg.sender,pending,_times,_pendingTimes,hbtBal);
             emit ProfitLock(msg.sender, _pid, pending, _times);
         }
 

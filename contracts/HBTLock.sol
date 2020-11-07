@@ -25,6 +25,8 @@ contract HBTLock is Ownable {
         uint256 endBlock;    //抵押结束区块号
         uint256 number;      //抵押数量
         uint256 times;       //倍数
+        uint256 numberTimes;
+        uint256 hbtBal;
     }
     mapping (address => DepositInfo[]) public depositInfo;    //锁定记录
 
@@ -64,22 +66,20 @@ contract HBTLock is Ownable {
             return (0,true);
         }
         uint256 index = 0;
+        bool isNew = true;
+
         for (uint256 id = 0; id < length; id++) {
             if(depositInfo[_address][id].number == 0){
                 index = id;
+                isNew = false;
+                break;
             }
         }
-
-        bool isNew = true;
-        if(depositInfo[_address][index].times != 0){  //times 原数据源没有更新times
-            isNew = false;
-        }
-
         return (index,isNew);
     }
 
     //抵押
-    function disposit(address _address, uint256 _number, uint256 _times) public returns (bool) {
+    function disposit(address _address, uint256 _number, uint256 _times, uint256 _numberTimes,uint256 _hbtBal) public returns (bool) {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
@@ -105,12 +105,16 @@ contract HBTLock is Ownable {
             depositInfo[_address].push(DepositInfo({
                 endBlock: _endBlock,
                 number: _number,
-                times: _times
+                times: _times,
+                numberTimes: _numberTimes,
+                hbtBal: _hbtBal
             }));
         }else{
             depositInfo[_address][index].endBlock = _endBlock;
             depositInfo[_address][index].number = _number;
             depositInfo[_address][index].times = _times;
+            depositInfo[_address][index].numberTimes = _numberTimes;
+            depositInfo[_address][index].hbtBal = _hbtBal;
         }
 
 
@@ -155,7 +159,7 @@ contract HBTLock is Ownable {
                 depositInfo[_address][id].endBlock = 0;
                 depositInfo[_address][id].number = 0;
                 userInfo[_address].depositCount = userInfo[_address].depositCount.sub(1);
-                // depositInfo[_address][id].times = 0;
+                depositInfo[_address][id].times = 0;
             }
         }
         //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
