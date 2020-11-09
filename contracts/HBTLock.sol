@@ -1,7 +1,6 @@
 pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-// import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -137,14 +136,10 @@ contract HBTLock is Ownable {
                 unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
             }
         }
-        //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
-        // unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
-        // unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
-
         return (unlockNumber,unlockDispositNumber);
     }
 
-    //获取可解锁数量,将符合的记录重置成0
+    //获取可解锁数量,将符合的记录重置成
     function unlockInfoOpt(address _address) public  returns (uint256, uint256) {
         uint256 _blcokNumber = block.number;
         uint256 length = depositInfo[_address].length;
@@ -162,13 +157,10 @@ contract HBTLock is Ownable {
                 depositInfo[_address][id].times = 0;
             }
         }
-        //可解锁数量 = 总抵押量 - 用户已抵押提取量 - 用户分红提取量
-        // unlockNumber =  unlockNumber.sub(userInfo[_address].pickDeposit).sub(userInfo[_address].pickTimesAward);
-        // unlockDispositNumber = unlockDispositNumber.sub(userInfo[_address].pickDeposit);
 
         return (unlockNumber,unlockDispositNumber);
     }
-    //提取  提完现 
+    //提取收益 
     function  withdraw() public {
 
         uint256 unlockNumber;

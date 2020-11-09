@@ -96,7 +96,6 @@ contract MasterChef is Ownable {
     constructor(
         HBTToken _hbt, //HBT Token合约地址
         HBTLock _hbtLock, //HBTLock 合约地址
-        // address _devaddr,
         uint256 _hbtPerBlock, //每个块产生的HBT Token的数量
         uint256 _startBlock,  //开挖HBT的区块高度
         uint256 _bonusEndBlock, //HBT倍数结束块
@@ -104,7 +103,6 @@ contract MasterChef is Ownable {
     ) public {
         hbt = _hbt;
         hbtLock = _hbtLock;
-        // devaddr = _devaddr;
         hbtPerBlock = _hbtPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
@@ -335,7 +333,7 @@ contract MasterChef is Ownable {
     }
 
  
-    //提取收益&
+    //提取收益&延时提取
     function extractReward(uint256 _pid, uint256 _times, bool _profitLock) public {
 
         withdraw(_pid,0);
