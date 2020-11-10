@@ -207,6 +207,7 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accHbtPerShare = pool.accHbtPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
             uint256 hbtReward = multiplier.mul(hbtPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
@@ -273,7 +274,6 @@ contract MasterChef is Ownable {
             // safeHbtTransfer(msg.sender, pending.sub(toRefer));
             userRewardInfo[_pid][msg.sender] = userRewardInfo[_pid][msg.sender].add(pending.sub(toRefer));
             safeHbtTransfer(refer, toRefer);
-            
         }
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
         user.amount = user.amount.add(_amount);
@@ -351,7 +351,7 @@ contract MasterChef is Ownable {
             uint256 hbtBal = hbt.balanceOf(address(this));
 
             safeHbtTransfer(address(hbtLock), _pendingTimes);
-            hbtLock.disposit(msg.sender,pending,_times,_pendingTimes,hbtBal);
+            hbtLock.disposit(msg.sender,pending,_times);
             emit ProfitLock(msg.sender, _pid, pending, _times);
         }
 

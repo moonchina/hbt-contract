@@ -70,15 +70,6 @@ contract('HBTLock', ([alice, bob, carol, dev, minter]) => {
         // At block 605, she should have 1000*15 + 100*15 = 10500 pending.
         await time.advanceBlockTo('102');
 
-
-        // console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[0].toString())
-        // console.log("unlockInfo",(await this.hbtLock.unlockInfo(alice))[1].toString())
-        // console.log("this.hbt.balanceOf(this.hbtLock.address))",(await this.hbt.balanceOf(this.hbtLock.address)).toString())
-     //    assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '15000');
-     //    // At block 606, Alice withdraws all pending rewards and should get 10600.
-     //    await this.chef.withdraw(0, '0', { from: alice });
-     //    assert.equal((await this.chef.pendingHbt(0, alice)).valueOf(), '0');
-     //    assert.equal((await this.hbt.balanceOf(alice)).valueOf(), '16000');
         await time.advanceBlockTo('132');
         console.log("await this.chef.pendingHbtShow(0,alice)",(await this.chef.pendingHbtShow(0,alice)).valueOf().toString())
         await this.chef.extractReward(0,15,true, { from: alice });
