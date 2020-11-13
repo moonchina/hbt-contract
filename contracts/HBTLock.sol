@@ -49,11 +49,20 @@ contract HBTLock is Ownable {
         times[15] = 600;
         times[25] = 1200;
     }
+
+    bool public close = false;
+
     event Withdraw(address indexed user,uint256 unlockNumber);
 
     //masterChef  
     function setMasterChef(address _address) public  onlyOwner {
         masterChef = _address;
+    }
+
+
+    //close hbtlock  
+    function setClose(bool _bool) public  onlyOwner {
+        close = _bool;
     }
 
     //查询新增锁定记录方式
@@ -76,11 +85,12 @@ contract HBTLock is Ownable {
     }
 
     //抵押
-    function disposit(address _address, uint256 _number, uint256 _times) public returns (bool) {
+    function disposit(address _address,uint256 _number, uint256 _times) public returns (bool) {
         require(_number > 0, "HBTLock:disposit _number Less than zero");
         require(times[_times] > 0, "HBTLock:disposit _times Less than zero");
         require(msg.sender == masterChef, "HBTLock:msg.sender Not equal to masterChef");
         require(depositCountTotal > userInfo[_address].depositCount, "HBTLock: The maximum mortgage times have been exceeded");
+        require(close == false, "HBTLock: The contract has been closed ");
 
         uint256 _endBlockTime = times[_times];
         timesAwardTotal = timesAwardTotal.add(_number.mul(_times).div(10)).sub(_number);
@@ -134,14 +144,14 @@ contract HBTLock is Ownable {
     }
 
     //获取可解锁数量,将符合的记录重置成
-    function unlockInfoOpt(address _address) public  returns (uint256, uint256) {
+    function unlockInfoOpt(address _address) private  returns (uint256, uint256) {
         uint256 _blcokNumber = block.number;
         uint256 length = depositInfo[_address].length;
 
-        uint256 unlockNumber;
-        uint256 unlockDispositNumber;
+        uint256 unlockNumber = 0;
+        uint256 unlockDispositNumber = 0;
         for (uint256 id = 0; id < length; ++id) {
-            if(depositInfo[_address][id].endBlock < _blcokNumber) {
+            if(depositInfo[_address][id].endBlock < _blcokNumber && depositInfo[_address][id].endBlock != 0) {
                 unlockNumber = unlockNumber.add(depositInfo[_address][id].number.mul(depositInfo[_address][id].times).div(10));
                 unlockDispositNumber = unlockDispositNumber.add(depositInfo[_address][id].number);
                 
@@ -176,4 +186,5 @@ contract HBTLock is Ownable {
         userInfo[_address].pickTimesAward = userInfo[_address].pickTimesAward.add(unlockNumber.sub(unlockDispositNumber));
         emit Withdraw(msg.sender, unlockNumber);
     }
+
 }

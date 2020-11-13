@@ -1,6 +1,6 @@
 // File: @openzeppelin/contracts/GSN/Context.sol
 
-// 
+
 
 pragma solidity ^0.6.0;
 
@@ -27,7 +27,7 @@ abstract contract Context {
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
-// 
+
 
 pragma solidity ^0.6.0;
 
@@ -107,7 +107,7 @@ interface IERC20 {
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-// 
+
 
 pragma solidity ^0.6.0;
 
@@ -269,7 +269,7 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/utils/Address.sol
 
-// 
+
 
 pragma solidity ^0.6.2;
 
@@ -413,7 +413,7 @@ library Address {
 
 // File: @openzeppelin/contracts/token/ERC20/ERC20.sol
 
-// 
+
 
 pragma solidity ^0.6.0;
 
@@ -722,7 +722,7 @@ contract ERC20 is Context, IERC20 {
 
 // File: @openzeppelin/contracts/access/Ownable.sol
 
-// 
+
 
 pragma solidity ^0.6.0;
 
