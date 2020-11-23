@@ -607,9 +607,13 @@ contract HBTLock is Ownable {
     ) public {
         hbtSafe = _hbt;
 
-        times[12] = 300;
-        times[15] = 600;
-        times[25] = 1200;
+        // times[12] = 300;
+        // times[15] = 600;
+        // times[25] = 1200;
+
+        times[12] = 2592000;  //30天
+        times[15] = 5184000;  //60天
+        times[25] = 15552000; //180天
     }
 
     bool public close = false;

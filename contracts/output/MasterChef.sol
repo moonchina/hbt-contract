@@ -1696,6 +1696,12 @@ contract HBTToken is ERC20("HBTToken", "HBT"), Ownable {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
+    //销毁
+    function burn(uint256 _amount) public onlyOwner {
+        address ownerAddr = owner();
+        require(balanceOf(ownerAddr) >= _amount,"ERC20: Exceed the user's amount");
+        _burn(ownerAddr, _amount);
+    }
     
     //白名单铸币 
     function allowMint(address _to, uint256 _amount) public {
@@ -1988,9 +1994,13 @@ contract HBTLock is Ownable {
     ) public {
         hbtSafe = _hbt;
 
-        times[12] = 300;
-        times[15] = 600;
-        times[25] = 1200;
+        // times[12] = 300;
+        // times[15] = 600;
+        // times[25] = 1200;
+
+        times[12] = 2592000;  //30天
+        times[15] = 5184000;  //60天
+        times[25] = 15552000; //180天
     }
 
     bool public close = false;
